@@ -21,8 +21,15 @@ services:
       # Required — generate with: openssl rand -base64 32
       WF_SECRET_KEY: "${WF_SECRET_KEY:?Set WF_SECRET_KEY}"
 
-      # ── Authentication ────────────────────────────────────────────────
+      # ── Authentication (multi-user web mode) ───────────────────────────
       # Required when listening on 0.0.0.0 (the default for Docker).
+      #
+      # Default admin user ("admin", role=admin):
+      #   Set WF_DEFAULT_ADMIN_PASSWORD_HASH to bootstrap the admin account.
+      #   Generate: printf 'your-admin-password' | argon2 yoursalt16chars! -id -e
+      WF_DEFAULT_ADMIN_PASSWORD_HASH: "${WF_DEFAULT_ADMIN_PASSWORD_HASH:-}"
+
+      # Legacy single shared password hash (still works for transition).
       # Provide an Argon2id PHC hash of your password.
       #
       # IMPORTANT — Docker Compose interpolates "$" in .env files and YAML:
@@ -34,7 +41,7 @@ services:
       #   printf 'your-password' | argon2 yoursalt16chars! -id -e
       #
       # If a reverse proxy handles auth instead, set WF_AUTH_REQUIRED: "false"
-      # and leave WF_AUTH_PASSWORD_HASH empty.
+      # and leave the hashes empty.
       WF_AUTH_PASSWORD_HASH: "${WF_AUTH_PASSWORD_HASH:-}"
       WF_AUTH_TOKEN_TTL_MINUTES: "${WF_AUTH_TOKEN_TTL_MINUTES:-60}"
       # Set to "false" to skip the auth requirement (e.g. reverse proxy handles auth)

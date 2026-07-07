@@ -26,6 +26,7 @@ pub mod secrets;
 pub mod settings;
 pub mod sync;
 pub mod taxonomies;
+pub mod users;
 pub mod utils;
 
 // Re-export common types from asset and portfolio modules

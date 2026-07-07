@@ -23,8 +23,12 @@ Key environment variables
   - Base64-encoded string (recommended): Generate with `openssl rand -base64 32` or `head -c 32 /dev/urandom | base64`
   - 32-byte ASCII string: Must be exactly 32 characters (less secure if contains only printable characters)
   Example: `WF_SECRET_KEY=$(openssl rand -base64 32)`.
-- `WF_AUTH_PASSWORD_HASH`: Enables password-only authentication for web mode when set to an Argon2id PHC string.
-  Generate via online tools like [argon2.online](https://argon2.online/) or the CLI (`argon2-utils` package):
+- `WF_DEFAULT_ADMIN_PASSWORD_HASH`: Bootstraps the default admin user ("admin", role=admin) on startup.
+  Provide an Argon2id PHC string (same generation as below). Recommended for first-run web deployments.
+  The admin can then manage additional users (including password resets) via the web UI.
+- `WF_AUTH_PASSWORD_HASH`: (Legacy) Enables password-only authentication. In multi-user mode the
+  primary mechanism is per-user accounts bootstrapped via `WF_DEFAULT_ADMIN_PASSWORD_HASH`.
+  Still supported for transition / simple single-admin setups. Generate the same way.
   ```bash
   printf 'your-password' | argon2 yoursalt16chars! -id -e
   ```
@@ -32,9 +36,9 @@ Key environment variables
   Use `printf` instead of `echo -n` to avoid hidden newline issues.
   For Docker Compose `.env`/`--env-file`, single-quote the value or double every `$`;
   for YAML inline values, double every `$` in the hash (`$$argon2id$$...`).
-  When unset, authentication is not configured. The server refuses to start on non-loopback
-  addresses without authentication unless `WF_AUTH_REQUIRED=false` is set; for local no-auth use
-  `WF_LISTEN_ADDR=127.0.0.1:8088`.
+  When unset (and no default admin hash), authentication may be disabled (see `WF_AUTH_REQUIRED`).
+  The server refuses to start on non-loopback addresses without authentication unless
+  `WF_AUTH_REQUIRED=false` is set; for local no-auth use `WF_LISTEN_ADDR=127.0.0.1:8088`.
 - `WF_AUTH_TOKEN_TTL_MINUTES`: Optional JWT access token lifetime (minutes). Defaults to `60`.
 - OIDC / SSO (optional): authenticate via any OpenID Connect provider (Authentik, PocketID, Authelia, Keycloak, …). OIDC is an alternative to `WF_AUTH_PASSWORD_HASH`; either or both can be enabled, and a successful SSO login mints the same session cookie. OIDC is enabled when **both** of the first two are set:
   - `WF_OIDC_ISSUER_URL`: Provider base URL. Discovery hits `<issuer>/.well-known/openid-configuration` at startup.
@@ -52,3 +56,4 @@ Notes
 - The server also honors `DATABASE_URL`; when running in this workspace, `WF_DB_PATH` is preferred and propagated to `DATABASE_URL` internally so the core layer uses the expected path.
 - Database migrations are embedded and applied automatically on startup.
 - Secrets in web/server mode are stored in an encrypted JSON file derived from the database directory using `WF_SECRET_KEY`.
+- **Multi-user**: Web mode creates isolated user accounts. Use `WF_DEFAULT_ADMIN_PASSWORD_HASH` to bootstrap the `admin` user. Registered/admin users can manage accounts via the web UI at Settings → Users. OIDC logins auto-provision users. Desktop builds remain single-user (implicit admin).

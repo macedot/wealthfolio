@@ -21,7 +21,7 @@ interface AuthContextValue {
   statusLoading: boolean;
   loginLoading: boolean;
   loginError: string | null;
-  login: (password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
 }
@@ -147,14 +147,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [t]);
 
   const login = useCallback(
-    async (password: string) => {
+    async (username: string, password: string) => {
       setLoginLoading(true);
       setLoginError(null);
       try {
         const response = await fetch("/api/v1/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
+          body: JSON.stringify({ username, password }),
           credentials: "same-origin",
         });
         if (!response.ok) {

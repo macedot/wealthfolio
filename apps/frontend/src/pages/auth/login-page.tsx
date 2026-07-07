@@ -16,15 +16,16 @@ import { useTranslation } from "react-i18next";
 export function LoginPage() {
   const { t } = useTranslation();
   const { login, loginLoading, loginError, clearError, requiresPassword, oidcEnabled } = useAuth();
+  const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!password.trim()) {
+    if (!username.trim() || !password.trim()) {
       return;
     }
     try {
-      await login(password);
+      await login(username, password);
       setPassword("");
     } catch (error) {
       console.error("Login failed", error);
@@ -53,6 +54,23 @@ export function LoginPage() {
               {requiresPassword ? (
                 <form className="space-y-8" onSubmit={handleSubmit}>
                   <div className="space-y-2">
+                    <Input
+                      data-testid="login-username-input"
+                      id="username"
+                      type="text"
+                      value={username}
+                      autoComplete="username"
+                      onChange={(event) => {
+                        if (loginError) {
+                          clearError();
+                        }
+                        setUsername(event.target.value);
+                      }}
+                      disabled={loginLoading}
+                      required
+                      placeholder="admin"
+                      className="h-12 rounded-full shadow-none"
+                    />
                     <Input
                       data-testid="login-password-input"
                       id="password"

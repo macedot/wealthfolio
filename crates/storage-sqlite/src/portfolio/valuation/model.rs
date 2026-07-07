@@ -43,6 +43,7 @@ pub struct DailyAccountValuationDB {
     pub value_status: String,
     pub basis_status: String,
     pub calculated_at: String,
+    pub user_id: String,
 }
 
 impl From<DailyAccountValuation> for DailyAccountValuationDB {
@@ -101,6 +102,7 @@ impl From<DailyAccountValuation> for DailyAccountValuationDB {
             value_status: value.value_status.as_str().to_string(),
             basis_status: value.basis_status.as_str().to_string(),
             calculated_at: value.calculated_at.to_rfc3339(),
+            user_id: String::new(),
         }
     }
 }

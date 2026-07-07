@@ -48,6 +48,7 @@ pub struct AccountDB {
     pub provider_account_id: Option<String>,
     pub is_archived: bool,
     pub tracking_mode: String,
+    pub user_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -229,6 +230,7 @@ impl From<NewAccount> for AccountDB {
             provider_account_id: domain.provider_account_id,
             is_archived: domain.is_archived,
             tracking_mode,
+            user_id: String::new(), // set by caller / repo using current user
         }
     }
 }
@@ -261,6 +263,7 @@ impl From<AccountUpdate> for AccountDB {
             provider_account_id: domain.provider_account_id,
             is_archived: domain.is_archived.unwrap_or(false),
             tracking_mode,
+            user_id: String::new(), // preserved from existing in repo update
         }
     }
 }

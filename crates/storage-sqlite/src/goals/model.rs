@@ -40,6 +40,7 @@ pub struct GoalDB {
     pub created_at: String,
     pub updated_at: String,
     pub summary_target_amount: Option<f64>,
+    pub user_id: String,
 }
 
 /// Database model for creating a new goal

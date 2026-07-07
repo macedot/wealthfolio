@@ -154,7 +154,7 @@ impl AgentTool for GetHoldings {
         // Build account_id → name lookup
         let accounts = env
             .account_service()
-            .list_accounts(None, None, None)
+            .list_accounts("admin", None, None, None)
             .map_err(|e| AgentToolError::ExecutionFailed(e.to_string()))?;
         let account_names: HashMap<String, String> =
             accounts.into_iter().map(|a| (a.id, a.name)).collect();

@@ -25,5 +25,6 @@ services:
       WF_DB_PATH: "/data/wealthfolio.db"
       WF_SECRET_KEY: "${WF_SECRET_KEY:?Set WF_SECRET_KEY}"
       WF_CORS_ALLOW_ORIGINS: "http://localhost:1420,http://localhost:3000"
+      WF_DEFAULT_ADMIN_PASSWORD_HASH: ""
       WF_AUTH_PASSWORD_HASH: ""
       WF_AUTH_REQUIRED: "false"

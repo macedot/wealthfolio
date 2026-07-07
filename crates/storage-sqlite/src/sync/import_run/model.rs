@@ -41,6 +41,7 @@ pub struct ImportRunDB {
     pub error: Option<String>,
     pub created_at: String,
     pub updated_at: String,
+    pub user_id: String,
 }
 
 impl From<ImportRunDB> for ImportRun {
@@ -129,6 +130,7 @@ impl From<ImportRun> for ImportRunDB {
             error: domain.error,
             created_at: domain.created_at.to_rfc3339(),
             updated_at: domain.updated_at.to_rfc3339(),
+            user_id: String::new(),
         }
     }
 }

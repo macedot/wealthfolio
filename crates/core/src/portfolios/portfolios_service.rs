@@ -38,7 +38,7 @@ impl PortfolioService {
     }
 
     fn validate_account_ids_exist(&self, ids: &[String]) -> Result<()> {
-        let existing = self.account_repository.list(None, None, Some(ids))?;
+        let existing = self.account_repository.list("admin", None, None, Some(ids))?;
         let found: std::collections::HashSet<_> = existing.iter().map(|a| &a.id).collect();
         for id in ids {
             if !found.contains(id) {
@@ -56,7 +56,7 @@ impl PortfolioService {
             return Ok(());
         }
 
-        let existing = self.account_repository.list(None, None, Some(ids))?;
+        let existing = self.account_repository.list("admin", None, None, Some(ids))?;
         let found: HashSet<_> = existing.iter().map(|a| a.id.as_str()).collect();
         for id in ids {
             if !found.contains(id.as_str()) {
@@ -175,7 +175,7 @@ impl PortfolioServiceTrait for PortfolioService {
 
         let accounts = self
             .account_repository
-            .list(None, None, Some(&resolved.account_ids))?;
+            .list("admin", None, None, Some(&resolved.account_ids))?;
         let eligible_ids: HashSet<String> = accounts
             .into_iter()
             .filter(|account| account_supports_portfolio_scope(account, purpose))

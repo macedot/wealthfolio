@@ -162,32 +162,32 @@ impl AccountServiceTrait for AccountService {
         account_ids: Option<&[String]>,
     ) -> Result<Vec<Account>> {
         self.repository
-            .list(is_active_filter, is_archived_filter, account_ids)
+            .list("admin", is_active_filter, is_archived_filter, account_ids)
     }
 
     /// Lists all accounts.
     fn get_all_accounts(&self) -> Result<Vec<Account>> {
-        self.repository.list(None, None, None)
+        self.repository.list("admin", None, None, None)
     }
 
     /// Lists only active accounts.
     fn get_active_accounts(&self) -> Result<Vec<Account>> {
-        self.list_accounts(Some(true), None, None)
+        self.list_accounts("admin", Some(true), None, None)
     }
 
     /// Retrieves multiple accounts by their IDs.
     fn get_accounts_by_ids(&self, account_ids: &[String]) -> Result<Vec<Account>> {
-        self.list_accounts(None, None, Some(account_ids))
+        self.list_accounts("admin", None, None, Some(account_ids))
     }
 
     /// Returns all non-archived accounts (for aggregates/history)
     fn get_non_archived_accounts(&self) -> Result<Vec<Account>> {
-        self.repository.list(None, Some(false), None)
+        self.repository.list("admin", None, Some(false), None)
     }
 
     /// Returns active, non-archived accounts (for UI selectors)
     fn get_active_non_archived_accounts(&self) -> Result<Vec<Account>> {
-        self.repository.list(Some(true), Some(false), None)
+        self.repository.list("admin", Some(true), Some(false), None)
     }
 
     fn get_base_currency(&self) -> Option<String> {

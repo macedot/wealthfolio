@@ -79,13 +79,21 @@ struct AuthErrorBody {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct Claims {
+    /// user id (was "wealthfolio-web" for legacy single-user)
     sub: String,
+    /// username for display
+    #[serde(skip_serializing_if = "Option::is_none")]
+    username: Option<String>,
+    /// "admin" | "user"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    role: Option<String>,
     exp: usize,
     iat: usize,
 }
 
 #[derive(Deserialize)]
 pub struct LoginRequest {
+    pub username: Option<String>,
     pub password: String,
 }
 
@@ -150,13 +158,16 @@ impl AuthManager {
             })
     }
 
-    pub fn issue_token(&self) -> Result<String, AuthError> {
+    /// Issue a session token for a specific user (multi-user) or legacy.
+    pub fn issue_token(&self, user_id: &str, username: Option<&str>, role: Option<&str>) -> Result<String, AuthError> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_err(|_| AuthError::Internal("System clock is before UNIX_EPOCH".into()))?;
         let exp = now + self.token_ttl;
         let claims = Claims {
-            sub: "wealthfolio-web".to_string(),
+            sub: user_id.to_string(),
+            username: username.map(|s| s.to_string()),
+            role: role.map(|s| s.to_string()),
             iat: now.as_secs() as usize,
             exp: exp.as_secs() as usize,
         };
@@ -192,10 +203,9 @@ impl AuthManager {
     }
 
     /// Mints a fresh session JWT and builds the `Set-Cookie` value for it.
-    /// Shared by password login and OIDC callback so both yield the same session.
-    /// Returns `(set_cookie_value, ttl_secs)`.
-    pub fn issue_session_cookie(&self, headers: &HeaderMap) -> Result<(String, u64), AuthError> {
-        let token = self.issue_token()?;
+    /// user_id/username/role for multi-user identity.
+    pub fn issue_session_cookie(&self, headers: &HeaderMap, user_id: &str, username: Option<&str>, role: Option<&str>) -> Result<(String, u64), AuthError> {
+        let token = self.issue_token(user_id, username, role)?;
         let ttl_secs = self.expires_in().as_secs();
         let cookie = build_session_cookie(&token, ttl_secs, self.should_secure_cookie(headers));
         Ok((cookie, ttl_secs))
@@ -296,7 +306,10 @@ pub async fn login(
 ) -> Result<Response, AuthError> {
     let auth = state.auth.as_ref().ok_or(AuthError::NotConfigured)?.clone();
     auth.verify_password(&payload.password)?;
-    let (cookie_value, ttl_secs) = auth.issue_session_cookie(&headers)?;
+    let username = payload.username.as_deref().unwrap_or("admin");
+    // For multi-user, the user_id will be resolved from DB in future; use username as sub for now or "admin"
+    let user_id = username; // simple for bootstrap; real impl will lookup id
+    let (cookie_value, ttl_secs) = auth.issue_session_cookie(&headers, user_id, Some(username), Some("admin"))?;
 
     let body = LoginResponse {
         authenticated: true,
@@ -367,7 +380,9 @@ pub async fn require_jwt(
     let mut response = next.run(request).await;
 
     if needs_refresh {
-        if let Ok(new_token) = auth.issue_token() {
+        let username = claims.username.as_deref();
+        let role = claims.role.as_deref();
+        if let Ok(new_token) = auth.issue_token(&claims.sub, username, role) {
             let ttl_secs = auth.expires_in().as_secs();
             let cookie = build_session_cookie(&new_token, ttl_secs, secure.unwrap_or(false));
             if let Ok(val) = HeaderValue::from_str(&cookie) {

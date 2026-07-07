@@ -56,6 +56,7 @@ struct LotRecordDB {
     close_activity_id: Option<String>,
     created_at: String,
     updated_at: String,
+    user_id: String,
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable)]
@@ -80,6 +81,7 @@ struct LotDisposalDB {
     fx_rate_to_base: String,
     cost_basis_method: String,
     created_at: String,
+    user_id: String,
 }
 
 #[derive(Debug, QueryableByName)]
@@ -160,6 +162,7 @@ impl From<&LotRecord> for LotRecordDB {
             close_activity_id: r.close_activity_id.clone(),
             created_at: r.created_at.clone(),
             updated_at: r.updated_at.clone(),
+            user_id: String::new(),
         }
     }
 }
@@ -185,6 +188,7 @@ impl From<&LotDisposal> for LotDisposalDB {
             fx_rate_to_base: d.fx_rate_to_base.clone(),
             cost_basis_method: d.cost_basis_method.clone(),
             created_at: d.created_at.clone(),
+            user_id: String::new(),
         }
     }
 }

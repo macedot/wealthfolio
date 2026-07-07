@@ -48,6 +48,7 @@ pub mod settings;
 pub mod spending;
 pub mod sync;
 pub mod taxonomies;
+pub mod users;
 
 // Re-export database utilities
 pub use db::{

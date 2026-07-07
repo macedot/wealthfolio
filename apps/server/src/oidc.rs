@@ -435,7 +435,8 @@ pub async fn oidc_callback(
         return error_redirect("oidc_internal");
     };
     let secure = cookie_secure(&state, &headers);
-    let Ok((session_cookie, _ttl_secs)) = auth.issue_session_cookie(&headers) else {
+    // TODO: use provisioned user id/username/role after lookup/create
+    let Ok((session_cookie, _ttl_secs)) = auth.issue_session_cookie(&headers, "oidc-user", None, None) else {
         return error_redirect("oidc_internal");
     };
 

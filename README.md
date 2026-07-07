@@ -266,8 +266,11 @@ All configuration is done via environment variables in `.env.web`.
 - `WF_SECRET_KEY` - **Required** 32-byte key used for secrets encryption and JWT
   signing
   - Generate with: `openssl rand -base64 32`
-- `WF_AUTH_PASSWORD_HASH` - Argon2id PHC string enabling password-only
-  authentication for web mode
+- `WF_DEFAULT_ADMIN_PASSWORD_HASH` - Argon2id PHC string to bootstrap the default
+  "admin" user (role: admin) with isolated data. Recommended for web deployments.
+  The admin account can create additional users and manage passwords via Settings.
+- `WF_AUTH_PASSWORD_HASH` - (Legacy) Argon2id PHC string for password auth.
+  Multi-user support uses per-user accounts (see `WF_DEFAULT_ADMIN_PASSWORD_HASH`).
 - `WF_AUTH_TOKEN_TTL_MINUTES` - Optional JWT access token expiry in minutes
   (default `60`)
 - `WF_AUTH_REQUIRED` - Set to `false` to allow starting on non-loopback
@@ -320,49 +323,38 @@ All configuration is done via environment variables in `.env.web`.
 - `VITE_API_TARGET` - Backend API URL for Vite proxy (default:
   `http://127.0.0.1:8088`)
 
-#### Authentication (Web Mode)
+#### Authentication (Web Mode) — Multi-User
 
-- Set `WF_AUTH_PASSWORD_HASH` to an Argon2id PHC string to require a password
-  before accessing the Web App.
+Web/server deployments support **multiple users** with data isolation. Login now
+uses `username` + `password` (the UI defaults the username field to `admin`).
 
-  You can generate the hash with online tools like
-  [argon2.online](https://argon2.online) or the CLI (`argon2-utils` package):
-
+**Default admin bootstrap (recommended):**
+- Set `WF_DEFAULT_ADMIN_PASSWORD_HASH` (Argon2id PHC) to create/update the
+  built-in `admin` user (role: admin) on startup.
+- Generate exactly as before:
   ```bash
-  printf 'your-password' | argon2 yoursalt16chars! -id -e
+  printf 'your-admin-password' | argon2 yoursalt16chars! -id -e
   ```
+- The admin can register additional users (gated) and manage them
+  (list / reset passwords / delete) under **Settings → Users** (web only).
 
-  > **Tips:**
-  >
-  > - The first argument is the **salt** (use 16+ characters); the password is
-  >   read from stdin.
-  > - Use `printf` instead of `echo -n` to avoid hidden newline issues.
-  > - For Docker Compose `.env` / `--env-file`, single-quote the hash or double
-  >   every `$` (`$$argon2id$$...`).
+`WF_AUTH_PASSWORD_HASH` is retained for legacy/simple setups and will continue
+to work during transition.
 
-  Copy the full output (starting with `$argon2id$...`) into `.env.web`.
-
-  **Dollar-sign (`$`) escaping cheat-sheet** — Argon2 hashes contain `$`
-  characters that shells and Compose interpret as variable references:
-
-  | Context                            | Syntax                                  | Notes                                            |
-  | ---------------------------------- | --------------------------------------- | ------------------------------------------------ |
-  | `.env.web` / app-loaded dotenv     | `WF_AUTH_PASSWORD_HASH=$argon2id$...`   | Loaded by the app; no Compose interpolation      |
-  | Docker Compose `.env`/`--env-file` | `WF_AUTH_PASSWORD_HASH='$argon2id$...'` | Single quotes prevent Compose interpolation      |
-  | Docker Compose `.env`/`--env-file` | `WF_AUTH_PASSWORD_HASH=$$argon2id$$...` | Alternative: double every `$`                    |
-  | Docker Compose YAML inline         | `HASH: '$$argon2id$$v=19$$...'`         | Double every `$` to escape Compose interpolation |
-  | `docker run` (single quotes)       | `-e HASH='$argon2id$...'`               | Single quotes prevent shell expansion            |
-  | `docker run` (double quotes)       | `-e HASH="\$argon2id\$..."`             | Backslash-escape each `$`                        |
+See `.env.web.example` and the server README for full details and escaping rules
+for Docker Compose.
 
 - Sessions are cookie-based (`HttpOnly`, `SameSite=Lax`, `Path=/api`). The login
-  endpoint sets the session cookie automatically — no token is exposed to
-  client-side JavaScript. Sessions last 60 minutes by default (see
-  `WF_AUTH_TOKEN_TTL_MINUTES`).
+  endpoint sets the session cookie automatically. Sessions last 60 minutes by
+  default (see `WF_AUTH_TOKEN_TTL_MINUTES`).
 
 - **Reverse proxy (HTTPS):** If your reverse proxy terminates TLS, ensure it
   forwards `X-Forwarded-Proto: https` so the server sets the `Secure` cookie
   attribute correctly. Alternatively, set `WF_COOKIE_SECURE=true` to always set
   `Secure`. See `WF_COOKIE_SECURE` above.
+
+- OIDC/SSO continues to work and will auto-provision local user records on
+  first successful login (subject to allowlists).
 
 #### Notes
 
